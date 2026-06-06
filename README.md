@@ -24,13 +24,13 @@ and the matching 3' PaqCI cassette — ready to order from any oligo / gBlock ve
 ## Live tool
 
 - **Web UI:** https://huggingface.co/spaces/currie-wfu/sgRNA_array
-- **Landing / docs:** https://USERNAME.github.io/sgrna-array-webtool/ *(replace `USERNAME` once the GitHub repo is up)*
+- **Landing / docs:** https://currie-wfu.github.io/sgRNA-array/
 
 ## Use locally
 
 ```bash
-git clone https://github.com/USERNAME/sgrna-array-webtool.git
-cd sgrna-array-webtool
+git clone https://github.com/currie-wfu/sgRNA-array.git
+cd sgRNA-array
 
 # Install
 pip install -e .
@@ -64,7 +64,7 @@ flask --app webapp.app run --debug
 @software{currie_sgrna_array_designer,
   author = {Currie, Joshua},
   title  = {sgRNA Array Designer},
-  url    = {https://github.com/USERNAME/sgrna-array-webtool},
+  url    = {https://github.com/currie-wfu/sgRNA-array},
   year   = {2026}
 }
 ```

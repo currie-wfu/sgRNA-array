@@ -17,12 +17,10 @@
         Golden Gate assembly into multi-sgRNA arrays expressed from a Pol II intron.
       </p>
       <p class="actions">
-        <!-- TODO: replace USERNAME with your Hugging Face username after creating the Space. -->
         <a class="btn btn-primary" href="https://huggingface.co/spaces/currie-wfu/sgRNA_array">
           Launch the tool →
         </a>
-        <!-- TODO: replace USERNAME with your GitHub username after pushing the repo. -->
-        <a class="btn btn-secondary" href="https://github.com/USERNAME/sgrna-array-webtool">
+        <a class="btn btn-secondary" href="https://github.com/currie-wfu/sgRNA-array">
           Source on GitHub
         </a>
       </p>
@@ -86,7 +84,7 @@
       <pre><code>@software{currie_sgrna_array_designer,
   author = {Currie, Joshua},
   title  = {sgRNA Array Designer},
-  url    = {https://github.com/USERNAME/sgrna-array-webtool},
+  url    = {https://github.com/currie-wfu/sgRNA-array},
   year   = {2026}
 }</code></pre>
       <p>A DOI will be added once a versioned release is archived via Zenodo.</p>
@@ -94,8 +92,8 @@
 
     <section>
       <h2>Use locally</h2>
-      <pre><code>git clone https://github.com/USERNAME/sgrna-array-webtool.git
-cd sgrna-array-webtool
+      <pre><code>git clone https://github.com/currie-wfu/sgRNA-array.git
+cd sgRNA-array
 pip install -e ".[web]"
 python -m pytest tests/                 # 63 tests
 python -m sgrna_array.cli build inputs.csv -o out/
@@ -107,7 +105,7 @@ flask --app webapp.app run --debug      # local UI on http://localhost:5000</cod
     <div class="container">
       <p>
         Built by the
-        <a href="https://github.com/USERNAME">Currie lab</a> at Wake Forest University ·
+        <a href="https://github.com/currie-wfu">Currie lab</a> at Wake Forest University ·
         MIT license · DeWeirdt 2022 scaffold · HH+HDV ribozymes · PaqCI Golden Gate
       </p>
     </div>
