@@ -27,6 +27,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
+        with:
+          # Auto-enable Pages with GitHub Actions as the source if the repo's
+          # Pages source is still set to "Deploy from a branch" (default for new repos).
+          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: docs
