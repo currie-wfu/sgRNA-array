@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Array built · sgRNA Array Designer{% endblock %}
+
+{% block content %}
+  <section class="card">
+    <h2>Array built</h2>
+    <dl class="summary">
+      <dt>Array size</dt><dd>{{ array.array_size }} sgRNAs</dd>
+      <dt>Total pieces to order</dt><dd>{{ array.total_pieces() }}</dd>
+      <dt>5' barcode</dt><dd><code>{{ barcode }}</code></dd>
+      <dt>CS1 in scaffold</dt><dd>{{ "yes" if use_cs1 else "no" }}</dd>
+    </dl>
+
+    {% if warnings %}
+      <div class="warning-banner">
+        <strong>Warnings:</strong>
+        <ul>
+          {% for pos, msgs in warnings.items() %}
+            {% for msg in msgs %}
+              <li>pos {{ pos }}: {{ msg }}</li>
+            {% endfor %}
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+
+    <div class="downloads">
+      <a class="btn btn-primary" href="{{ url_for('export', design_id=design_id, fmt='fasta') }}">Download FASTA</a>
+      <a class="btn btn-primary" href="{{ url_for('export', design_id=design_id, fmt='csv') }}">Download order sheet (CSV)</a>
+      <a class="btn btn-primary" href="{{ url_for('export', design_id=design_id, fmt='genbank') }}">Download GenBank</a>
+      <a class="btn btn-secondary" href="{{ url_for('index', size=array.array_size) }}">Design another</a>
+    </div>
+  </section>
+
+  <section class="card">
+    <h3>Assembly map</h3>
+    <div class="assembly-map">
+      {{ assembly_map_svg | safe }}
+    </div>
+    <p class="muted">
+      Junction blocks show the 4-nt overhangs between fragments. Fragments are PaqCI cassettes
+      that release the inner ribozyme-sgRNA-ribozyme core on digestion.
+    </p>
+  </section>
+
+  <section class="card">
+    <h3>Fragments</h3>
+    <table class="fragment-table">
+      <thead>
+        <tr>
+          <th>Pos</th>
+          <th>Gene</th>
+          <th>5' overhang</th>
+          <th>3' overhang</th>
+          <th>Length</th>
+          <th>Sequence (5'→3')</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for frag in array.fragments %}
+          <tr>
+            <td>{{ frag.position }}</td>
+            <td>{{ frag.gene_label or "—" }}{% if frag.barcode %}<br><small class="muted">+ barcode</small>{% endif %}</td>
+            <td><code>{{ frag.left_overhang }}</code></td>
+            <td><code>{{ frag.right_overhang }}</code></td>
+            <td>{{ frag.ordered_dna | length }} nt</td>
+            <td>
+              <details>
+                <summary><code class="seq-summary">{{ frag.ordered_dna[:32] }}…</code></summary>
+                <code class="seq-full">{{ frag.ordered_dna }}</code>
+                <button type="button" class="btn-copy" data-copy-target="seq-{{ loop.index0 }}">Copy</button>
+                <textarea id="seq-{{ loop.index0 }}" class="seq-copy-source" readonly>{{ frag.ordered_dna }}</textarea>
+              </details>
+            </td>
+          </tr>
+        {% endfor %}
+        {% if array.stitcher %}
+          <tr class="stitcher-row">
+            <td>—</td>
+            <td>stitcher (stop-at-{{ array.stitcher.stop_size }})</td>
+            <td><code>{{ array.stitcher.left_overhang }}</code></td>
+            <td><code>{{ array.stitcher.right_overhang }}</code></td>
+            <td>{{ array.stitcher.ordered_dna | length }} nt</td>
+            <td><code class="seq-full">{{ array.stitcher.ordered_dna }}</code></td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </section>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% endblock %}

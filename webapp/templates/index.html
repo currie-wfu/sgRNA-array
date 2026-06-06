@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}Design array · sgRNA Array Designer{% endblock %}
+
+{% block content %}
+  <section class="card">
+    <h2>Design a new array</h2>
+    <p class="muted">
+      Pick an array size (number of sgRNAs), enter a 20-nt crRNA spacer per position, and submit.
+      The tool generates ordered DNA fragments with all ribozymes, scaffolds, overhangs, and a 5'
+      array barcode pre-assembled.
+    </p>
+
+    <form id="design-form" method="post" action="{{ url_for('design') }}" novalidate>
+      <fieldset class="field-group">
+        <legend>Array configuration</legend>
+        <div class="field">
+          <label for="array_size">Array size</label>
+          <select id="array_size" name="array_size" required>
+            {% for size in supported_sizes %}
+              <option value="{{ size }}" {% if size == selected_size %}selected{% endif %}>{{ size }} sgRNAs</option>
+            {% endfor %}
+          </select>
+          <p class="help">Sub-12 sizes use a stitcher oligo to terminate the assembly.</p>
+        </div>
+      </fieldset>
+
+      <fieldset class="field-group">
+        <legend>sgRNA positions</legend>
+        {% if form_errors and 0 in form_errors %}
+          <div class="error-banner" role="alert">
+            <strong>Barcode error:</strong>
+            <ul>{% for msg in form_errors[0] %}<li>{{ msg }}</li>{% endfor %}</ul>
+          </div>
+        {% endif %}
+
+        <div id="rows" class="rows">
+          {% for i in range(1, selected_size + 1) %}
+            {% set label = (form_values.labels[i-1] if form_values else "") %}
+            {% set crrna = (form_values.crrnas[i-1] if form_values else "") %}
+            <div class="row {% if form_errors and i in form_errors %}row-error{% endif %}">
+              <span class="row-pos">pos&nbsp;{{ i }}</span>
+              <label class="row-field">
+                <span class="row-field-label">Gene label</span>
+                <input
+                  type="text"
+                  name="gene_label_{{ i }}"
+                  value="{{ label }}"
+                  maxlength="32"
+                  placeholder="e.g. Shh"
+                  autocomplete="off">
+              </label>
+              <label class="row-field row-field-crrna">
+                <span class="row-field-label">crRNA (20 nt)</span>
+                <input
+                  type="text"
+                  name="crrna_{{ i }}"
+                  value="{{ crrna }}"
+                  pattern="[ACGTacgt]{20}"
+                  maxlength="20"
+                  spellcheck="false"
+                  autocapitalize="characters"
+                  autocomplete="off"
+                  placeholder="e.g. GGTGACGCGTGTGTACCTGG"
+                  data-validate-crrna>
+              </label>
+              {% if form_errors and i in form_errors %}
+                <ul class="row-error-msgs">
+                  {% for msg in form_errors[i] %}<li>{{ msg }}</li>{% endfor %}
+                </ul>
+              {% elif form_warnings and i in form_warnings %}
+                <ul class="row-warning-msgs">
+                  {% for msg in form_warnings[i] %}<li>{{ msg }}</li>{% endfor %}
+                </ul>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      </fieldset>
+
+      <fieldset class="field-group">
+        <legend>Advanced options</legend>
+        <div class="field">
+          <label for="barcode">5' array barcode (optional)</label>
+          <input
+            type="text"
+            id="barcode"
+            name="barcode"
+            maxlength="32"
+            spellcheck="false"
+            autocomplete="off"
+            placeholder="Leave blank to auto-generate"
+            value="{{ form_values.barcode if form_values else '' }}">
+          <p class="help">
+            12-nt default; auto-generated barcode is collision-checked against existing
+            captures and PaqCI sites.
+          </p>
+        </div>
+        <div class="field-checkbox">
+          <input
+            type="checkbox"
+            id="use_cs1"
+            name="use_cs1"
+            {% if form_values and form_values.use_cs1 %}checked{% endif %}>
+          <label for="use_cs1">
+            Insert <strong>CS1</strong> in scaffold Hairpin-1 loop (10x direct-capture)
+          </label>
+          <p class="help">
+            Replogle 2020 modification. Slightly modifies the sgRNA scaffold; may affect
+            activity for some guides. Off by default.
+          </p>
+        </div>
+      </fieldset>
+
+      <div class="actions">
+        <button type="submit" class="btn btn-primary">Build array</button>
+        <button type="reset" class="btn btn-secondary">Clear</button>
+      </div>
+    </form>
+  </section>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% endblock %}

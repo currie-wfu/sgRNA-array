@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}sgRNA Array Designer{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <a class="site-title" href="{{ url_for('index') }}">sgRNA Array Designer</a>
+      <p class="site-subtitle">
+        Ribozyme-flanked sgRNA fragments for PaqCI Golden Gate assembly into Pol II intronic arrays.
+      </p>
+    </div>
+  </header>
+
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>
+        DeWeirdt 2022 scaffold · HH+HDV ribozymes · PaqCI 4-nt overhangs · NEB-validated at 98% fidelity.
+      </p>
+    </div>
+  </footer>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,39 @@
+# Keep the Docker build context lean.
+
+# Tests aren't needed at runtime.
+tests/
+.pytest_cache/
+
+# Python build artifacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.eggs/
+
+# Virtualenvs
+.venv/
+venv/
+
+# IDE / OS noise
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Linting / coverage
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Project docs and meta — not needed inside the running container.
+docs/
+.github/
+NEB_OVERHANG_VALIDATION.md
+README.md
+
+# Git
+.git/
+.gitignore

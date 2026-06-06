@@ -1,0 +1,136 @@
+/* sgRNA Array Designer — GitHub Pages landing page styling.
+   Mirrors the Flask app's restrained scientific palette. */
+
+:root {
+  --color-bg: #fafbfc;
+  --color-surface: #ffffff;
+  --color-border: #d9dee5;
+  --color-text: #1f2933;
+  --color-muted: #5b6675;
+  --color-primary: #1d6a8c;
+  --color-primary-hover: #155372;
+  --color-secondary: #e1e6ec;
+  --color-hero-bg: #f1f5f8;
+  --radius: 6px;
+  --font-system: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-system);
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+a:hover { text-decoration: underline; }
+
+.container {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* Hero */
+.hero {
+  background: var(--color-hero-bg);
+  border-bottom: 1px solid var(--color-border);
+  padding: 64px 0 56px;
+}
+.hero h1 {
+  margin: 0 0 12px;
+  font-size: 2.4rem;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+.hero .lede {
+  margin: 0 0 32px;
+  font-size: 1.15rem;
+  color: var(--color-muted);
+  max-width: 700px;
+}
+.hero .actions { margin: 0; display: flex; gap: 12px; flex-wrap: wrap; }
+
+.btn {
+  display: inline-block;
+  padding: 12px 22px;
+  font-size: 1rem;
+  border-radius: var(--radius);
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+.btn-primary {
+  background: var(--color-primary);
+  color: white;
+}
+.btn-primary:hover { background: var(--color-primary-hover); text-decoration: none; }
+.btn-secondary {
+  background: var(--color-secondary);
+  color: var(--color-text);
+  border-color: var(--color-border);
+}
+.btn-secondary:hover { background: #cdd4dd; text-decoration: none; }
+
+/* Sections */
+main section {
+  padding: 36px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+main section:last-of-type { border-bottom: none; }
+main h2 { margin-top: 0; font-size: 1.4rem; }
+
+main p { margin: 12px 0; }
+
+pre {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 16px;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+code {
+  font-family: var(--font-mono);
+  font-size: 0.92rem;
+}
+pre code { font-size: inherit; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+}
+th, td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+  font-size: 0.95rem;
+}
+th {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-muted);
+  background: var(--color-hero-bg);
+}
+
+footer {
+  padding: 28px 0;
+  border-top: 1px solid var(--color-border);
+  color: var(--color-muted);
+  font-size: 0.9rem;
+  text-align: center;
+  margin-top: 32px;
+}

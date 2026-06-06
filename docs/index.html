@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>sgRNA Array Designer</title>
+  <meta name="description" content="Design ribozyme-flanked sgRNA arrays for PaqCI Golden Gate assembly into Pol II intronic cassettes.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="hero">
+    <div class="container">
+      <h1>sgRNA Array Designer</h1>
+      <p class="lede">
+        Design ribozyme-flanked sgRNA DNA fragments for one-pot
+        <a href="https://www.neb.com/en-us/products/r0745-paqci" target="_blank" rel="noopener">PaqCI</a>
+        Golden Gate assembly into multi-sgRNA arrays expressed from a Pol II intron.
+      </p>
+      <p class="actions">
+        <!-- TODO: replace USERNAME with your Hugging Face username after creating the Space. -->
+        <a class="btn btn-primary" href="https://huggingface.co/spaces/currie-wfu/sgRNA_array">
+          Launch the tool →
+        </a>
+        <!-- TODO: replace USERNAME with your GitHub username after pushing the repo. -->
+        <a class="btn btn-secondary" href="https://github.com/USERNAME/sgrna-array-webtool">
+          Source on GitHub
+        </a>
+      </p>
+    </div>
+  </header>
+
+  <main class="container">
+    <section>
+      <h2>What it does</h2>
+      <p>
+        You provide 20-nt crRNA spacers and array positions; the tool returns ordered DNA fragments
+        with all ribozymes, sgRNA scaffolds, position-specific 4-nt overhangs, and an array-identifying
+        5' barcode pre-assembled. One-pot PaqCI digestion + T4 DNA ligase assembles the fragments into
+        the host vector with NEB-validated 98% predicted fidelity for the full 13-junction set.
+      </p>
+      <p>
+        Each fragment has the structure:
+      </p>
+      <pre><code>5' pad │ CACCTGC │ N │ overhang │ HH stem-I │ HH core │ crRNA │ scaffold │ HDV │ overhang │ N │ GCAGGTG │ 3' pad</code></pre>
+      <p>
+        Total ordered DNA per fragment: ~250 bp (gBlock / oligo pool friendly).
+      </p>
+    </section>
+
+    <section>
+      <h2>Why intronic + ribozyme-flanked?</h2>
+      <p>
+        The array sits in a host gene's intron and is transcribed by Pol II as part of the pre-mRNA.
+        Hammerhead and HDV ribozymes self-cleave at both ends of every sgRNA in the array, releasing
+        mature 5'/3' ends that load into Cas9. This bypasses the Pol III length limits and termination
+        signals that constrain conventional U6-driven sgRNAs, and lets you co-express the array with
+        a Cas9 cassette from a single Tol2-integrated mRNA.
+      </p>
+    </section>
+
+    <section>
+      <h2>Validated design constraints</h2>
+      <table>
+        <thead>
+          <tr><th>Component</th><th>Value</th><th>Source</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>sgRNA scaffold</td><td>DeWeirdt 2022 (76 nt)</td>
+              <td><a href="https://doi.org/10.1038/s41467-022-33024-2">10.1038/s41467-022-33024-2</a></td></tr>
+          <tr><td>HH catalytic core</td><td>37 nt, constant; per-crRNA Stem-I</td>
+              <td>Host vector verified</td></tr>
+          <tr><td>HDV ribozyme</td><td>68 nt, constant</td>
+              <td>Host vector verified</td></tr>
+          <tr><td>Type IIs enzyme</td><td>PaqCI, 4-nt 5' overhang</td>
+              <td>NEB R0745</td></tr>
+          <tr><td>Overhang fidelity</td><td>98% predicted (full 13-junction set)</td>
+              <td>NEB Golden Gate Assembly Tool</td></tr>
+          <tr><td>Optional CS1 (10x direct capture)</td><td>22 nt, Hairpin-1 loop</td>
+              <td><a href="https://doi.org/10.1038/s41587-020-0470-y">10.1038/s41587-020-0470-y</a></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Cite</h2>
+      <pre><code>@software{currie_sgrna_array_designer,
+  author = {Currie, Joshua},
+  title  = {sgRNA Array Designer},
+  url    = {https://github.com/USERNAME/sgrna-array-webtool},
+  year   = {2026}
+}</code></pre>
+      <p>A DOI will be added once a versioned release is archived via Zenodo.</p>
+    </section>
+
+    <section>
+      <h2>Use locally</h2>
+      <pre><code>git clone https://github.com/USERNAME/sgrna-array-webtool.git
+cd sgrna-array-webtool
+pip install -e ".[web]"
+python -m pytest tests/                 # 63 tests
+python -m sgrna_array.cli build inputs.csv -o out/
+flask --app webapp.app run --debug      # local UI on http://localhost:5000</code></pre>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>
+        Built by the
+        <a href="https://github.com/USERNAME">Currie lab</a> at Wake Forest University ·
+        MIT license · DeWeirdt 2022 scaffold · HH+HDV ribozymes · PaqCI Golden Gate
+      </p>
+    </div>
+  </footer>
+</body>
+</html>
