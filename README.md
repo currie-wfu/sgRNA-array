@@ -60,16 +60,19 @@ flask --app webapp.app run --debug
 
 ## Citing
 
+A machine-readable citation lives in [`CITATION.cff`](CITATION.cff); GitHub renders it
+in the right sidebar of the repo. A Zenodo-minted DOI will be added once a versioned
+release is archived ([instructions](https://docs.github.com/en/repositories/archiving-a-github-repository/referencing-and-citing-content)).
+
 ```bibtex
 @software{currie_sgrna_array_designer,
   author = {Currie, Joshua},
   title  = {sgRNA Array Designer},
   url    = {https://github.com/currie-wfu/sgRNA-array},
-  year   = {2026}
+  year   = {2026},
+  version = {0.1.0}
 }
 ```
-
-A DOI will be added once a versioned release is archived via Zenodo.
 
 ## License
 

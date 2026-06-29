@@ -1,0 +1,47 @@
+# Citation File Format (https://citation-file-format.github.io).
+# GitHub renders this in the right sidebar of the repo, and Zenodo
+# uses it as the source of truth when archiving releases.
+#
+# After enabling Zenodo integration on this repo and tagging v0.1.0,
+# Zenodo mints a DOI. Replace the placeholder `doi:` line below with
+# the minted DOI (e.g. 10.5281/zenodo.1234567) and push.
+
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "sgRNA Array Designer"
+abstract: >
+  A web tool and Python library for designing ribozyme-flanked sgRNA DNA
+  fragments for one-pot PaqCI Golden Gate assembly into multi-sgRNA arrays
+  expressed from a Pol II intron. Each fragment carries an HH ribozyme with
+  per-crRNA Stem-I, the DeWeirdt 2022 sgRNA scaffold, an HDV ribozyme, and
+  position-specific 4-nt overhangs validated at 98% predicted fidelity by
+  NEB's Golden Gate Assembly Tool. Includes a contiguous single-gBlock
+  alternative output and optional 10x CS1 capture-sequence insertion.
+
+authors:
+  - family-names: Currie
+    given-names: Joshua
+    affiliation: "Wake Forest University"
+    email: "curriej@wfu.edu"
+
+version: 0.1.0
+date-released: "2026-06-05"
+url: "https://github.com/currie-wfu/sgRNA-array"
+repository-code: "https://github.com/currie-wfu/sgRNA-array"
+license: MIT
+keywords:
+  - CRISPR
+  - sgRNA
+  - Golden Gate
+  - PaqCI
+  - ribozyme
+  - hammerhead
+  - HDV
+  - Cas9
+  - multiplex
+  - sgRNA array
+  - DeWeirdt scaffold
+
+# Zenodo will populate this DOI on first release. Replace the placeholder
+# with the actual DOI returned at zenodo.org/account/settings/github/...
+# doi: 10.5281/zenodo.XXXXXXX

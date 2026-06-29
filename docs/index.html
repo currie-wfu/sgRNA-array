@@ -42,7 +42,39 @@
       <pre><code>5' pad │ CACCTGC │ N │ overhang │ HH stem-I │ HH core │ crRNA │ scaffold │ HDV │ overhang │ N │ GCAGGTG │ 3' pad</code></pre>
       <p>
         Total ordered DNA per fragment: ~250 bp (gBlock / oligo pool friendly).
+        Or, if you'd rather order one piece than many, the whole array also exports
+        as a single PaqCI-flanked gBlock with the same final cloned product.
       </p>
+    </section>
+
+    <section class="screenshots">
+      <h2>See it in action</h2>
+      <figure>
+        <a href="images/screenshot-form.jpg">
+          <img
+            src="images/screenshot-form.jpg"
+            alt="Screenshot of the input form: array size selector, four positional sgRNA rows with drag handles, optional barcode and CS1 inputs"
+            loading="lazy">
+        </a>
+        <figcaption>
+          <strong>Input form.</strong> Pick array size (1–12), enter one 20-nt crRNA per
+          position, drag rows to reorder. Inline validation checks length, ACGT alphabet,
+          and internal PaqCI sites; optional 5' array barcode + 10x CS1 toggle.
+        </figcaption>
+      </figure>
+      <figure>
+        <a href="images/screenshot-results.jpg">
+          <img
+            src="images/screenshot-results.jpg"
+            alt="Screenshot of the results page: array summary, color-coded assembly map SVG, single contiguous insert section, per-position fragment table with sequences"
+            loading="lazy">
+        </a>
+        <figcaption>
+          <strong>Results.</strong> Color-coded assembly map of fragments + junction overhangs,
+          single-contiguous-insert alternative, and per-position fragment table with full
+          ordered DNA. Downloads: FASTA, CSV order sheet, annotated GenBank.
+        </figcaption>
+      </figure>
     </section>
 
     <section>
@@ -81,13 +113,19 @@
 
     <section>
       <h2>Cite</h2>
+      <p>
+        A machine-readable citation lives in
+        <a href="https://github.com/currie-wfu/sgRNA-array/blob/main/CITATION.cff"><code>CITATION.cff</code></a>
+        — GitHub auto-renders it in the repo sidebar. Once a versioned release
+        is archived via Zenodo, the BibTeX block below will gain a DOI line.
+      </p>
       <pre><code>@software{currie_sgrna_array_designer,
-  author = {Currie, Joshua},
-  title  = {sgRNA Array Designer},
-  url    = {https://github.com/currie-wfu/sgRNA-array},
-  year   = {2026}
+  author  = {Currie, Joshua},
+  title   = {sgRNA Array Designer},
+  url     = {https://github.com/currie-wfu/sgRNA-array},
+  year    = {2026},
+  version = {0.1.0}
 }</code></pre>
-      <p>A DOI will be added once a versioned release is archived via Zenodo.</p>
     </section>
 
     <section>
