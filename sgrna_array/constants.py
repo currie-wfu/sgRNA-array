@@ -153,14 +153,22 @@ STITCHER_JUNCTION_BY_STOP_SIZE: dict[int, str] = {
     8: J_OVERHANGS[7],   # J8 = AGTA
     10: J_OVERHANGS[9],  # J10 = AGAC
     # 12: natural endpoint at B3; no stitcher needed.
+    # 1, 2: terminal fragment's 3' overhang is B3 directly; no stitcher needed
+    # (see TERMINAL_USES_B3_DIRECTLY below).
 }
 
 #: Inert spacer sequence between the two overhangs of a stitcher oligo. 6 nt of neutral
 #: sequence that contains no PaqCI sites and no obvious splice motifs.
 STITCHER_SPACER: str = "ATAATA"
 
+#: Array sizes whose terminal-position fragment's 3' overhang is B3 directly, with no
+#: stitcher needed. Size 12 is the natural endpoint of the full library. Sizes 1 and 2
+#: are small enough that the terminal fragment can be ordered as a self-contained piece
+#: that ligates straight into the backbone — no library-stitcher dependency.
+TERMINAL_USES_B3_DIRECTLY: frozenset[int] = frozenset({1, 2, 12})
+
 #: All valid array sizes the tool supports.
-SUPPORTED_ARRAY_SIZES: tuple[int, ...] = (4, 6, 8, 10, 12)
+SUPPORTED_ARRAY_SIZES: tuple[int, ...] = (1, 2, 4, 6, 8, 10, 12)
 
 
 # ---------------------------------------------------------------------------

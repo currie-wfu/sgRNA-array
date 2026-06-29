@@ -45,6 +45,70 @@ def test_index_with_invalid_size_falls_back_to_default(client):
     assert body.count('name="crrna_') == 4
 
 
+def test_index_offers_sizes_1_and_2(client):
+    response = client.get("/")
+    body = response.get_data(as_text=True)
+    # Both small sizes should be present in the dropdown.
+    assert '<option value="1"' in body
+    assert '<option value="2"' in body
+
+
+def test_index_with_size_1_renders_single_row(client):
+    response = client.get("/?size=1")
+    assert response.status_code == 200
+    body = response.get_data(as_text=True)
+    assert body.count('name="crrna_') == 1
+    assert body.count('name="gene_label_') == 1
+
+
+def test_index_includes_drag_handle_markup(client):
+    response = client.get("/")
+    body = response.get_data(as_text=True)
+    # Each row should have a drag handle (matching the .row-drag-handle CSS class).
+    assert 'class="row-drag-handle"' in body
+    # The handle uses an inline SVG, not a Unicode glyph.
+    assert "<svg" in body
+
+
+def test_design_post_size_1_returns_single_fragment(client):
+    form_data = {
+        "array_size": "1",
+        "gene_label_1": "Shh",
+        "crrna_1": "GGTGACGCGTGTGTACCTGG",
+    }
+    response = client.post("/design", data=form_data)
+    assert response.status_code == 200
+    body = response.get_data(as_text=True)
+    assert "Array built" in body
+    # Size-1 array has 1 fragment + 0 stitcher = 1 piece total.
+    assert "<dd>1</dd>" in body  # "Total pieces to order"
+    # The single fragment must have B5 on the left and B3 on the right.
+    assert ">ACGG<" in body
+    assert ">GAGC<" in body
+    # No stitcher row in the fragment table.
+    assert "stitcher-row" not in body
+
+
+def test_design_post_size_2_returns_two_fragments_no_stitcher(client):
+    form_data = {
+        "array_size": "2",
+        "gene_label_1": "Shh",
+        "crrna_1": "GGTGACGCGTGTGTACCTGG",
+        "gene_label_2": "Pax6",
+        "crrna_2": "ACGTACGTACGTACGTAAAA",
+    }
+    response = client.post("/design", data=form_data)
+    assert response.status_code == 200
+    body = response.get_data(as_text=True)
+    assert "Array built" in body
+    # 2 fragments + 0 stitcher = 2 pieces.
+    assert "<dd>2</dd>" in body
+    # Position 1's right overhang and position 2's left overhang are both J1 = ATAA.
+    assert ">ATAA<" in body
+    # No stitcher row.
+    assert "stitcher-row" not in body
+
+
 def test_design_post_valid_array_returns_results(client):
     form_data = {
         "array_size": "4",

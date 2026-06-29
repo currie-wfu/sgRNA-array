@@ -65,6 +65,12 @@ def test_junction_overhang_terminal_position_12_is_b3() -> None:
     assert junction_overhang(12, 12) == constants.B3_OVERHANG
 
 
+def test_junction_overhang_terminal_position_for_sizes_1_and_2_is_b3() -> None:
+    # Sizes 1 and 2: terminal fragment ligates straight to backbone B3.
+    assert junction_overhang(1, 1) == constants.B3_OVERHANG
+    assert junction_overhang(2, 2) == constants.B3_OVERHANG
+
+
 def test_junction_overhang_terminal_position_for_sub12_arrays() -> None:
     # Terminal of a stop-at-4 array goes to the J4 overhang (= stitcher 5' overhang).
     assert junction_overhang(4, 4) == constants.STITCHER_JUNCTION_BY_STOP_SIZE[4]
@@ -177,6 +183,30 @@ def _dummy_crrnas(n: int) -> list[str]:
     ]
 
 
+def test_build_array_1_has_1_fragment_no_stitcher() -> None:
+    arr = build_array(crrnas=_dummy_crrnas(1))
+    assert arr.array_size == 1
+    assert len(arr.fragments) == 1
+    assert arr.stitcher is None
+    # Single fragment spans backbone directly: left=B5, right=B3.
+    assert arr.fragments[0].left_overhang == constants.B5_OVERHANG
+    assert arr.fragments[0].right_overhang == constants.B3_OVERHANG
+    assert arr.total_pieces() == 1
+
+
+def test_build_array_2_has_2_fragments_no_stitcher() -> None:
+    arr = build_array(crrnas=_dummy_crrnas(2))
+    assert arr.array_size == 2
+    assert len(arr.fragments) == 2
+    assert arr.stitcher is None
+    # Position 1: B5 → J1; Position 2: J1 → B3.
+    assert arr.fragments[0].left_overhang == constants.B5_OVERHANG
+    assert arr.fragments[0].right_overhang == constants.J_OVERHANGS[0]
+    assert arr.fragments[1].left_overhang == constants.J_OVERHANGS[0]
+    assert arr.fragments[1].right_overhang == constants.B3_OVERHANG
+    assert arr.total_pieces() == 2
+
+
 def test_build_array_4_has_4_fragments_plus_stitcher() -> None:
     arr = build_array(crrnas=_dummy_crrnas(4))
     assert arr.array_size == 4
@@ -225,7 +255,10 @@ def test_build_array_rejects_mismatched_crrna_count() -> None:
         build_array(crrnas=_dummy_crrnas(3), array_size=4)
 
 
-def test_build_stitcher_returns_none_for_size_12() -> None:
+def test_build_stitcher_returns_none_for_sizes_with_b3_terminus() -> None:
+    # Sizes 1, 2, 12 all have their terminal fragment go straight to B3 — no stitcher.
+    assert build_stitcher(1) is None
+    assert build_stitcher(2) is None
     assert build_stitcher(12) is None
 
 

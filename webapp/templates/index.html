@@ -34,11 +34,30 @@
           </div>
         {% endif %}
 
+        <p class="help rows-help">
+          Tip: drag the <span class="grip-inline" aria-hidden="true">⋮⋮</span> handle on any row
+          to reorder positions. Field values move with the row; positions renumber automatically.
+        </p>
         <div id="rows" class="rows">
           {% for i in range(1, selected_size + 1) %}
             {% set label = (form_values.labels[i-1] if form_values else "") %}
             {% set crrna = (form_values.crrnas[i-1] if form_values else "") %}
             <div class="row {% if form_errors and i in form_errors %}row-error{% endif %}">
+              <span
+                class="row-drag-handle"
+                role="button"
+                aria-label="Drag to reorder"
+                title="Drag to reorder"
+                tabindex="0">
+                <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+                  <circle cx="5" cy="3.5" r="1.3" fill="currentColor"/>
+                  <circle cx="5" cy="8" r="1.3" fill="currentColor"/>
+                  <circle cx="5" cy="12.5" r="1.3" fill="currentColor"/>
+                  <circle cx="11" cy="3.5" r="1.3" fill="currentColor"/>
+                  <circle cx="11" cy="8" r="1.3" fill="currentColor"/>
+                  <circle cx="11" cy="12.5" r="1.3" fill="currentColor"/>
+                </svg>
+              </span>
               <span class="row-pos">pos&nbsp;{{ i }}</span>
               <label class="row-field">
                 <span class="row-field-label">Gene label</span>

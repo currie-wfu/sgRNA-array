@@ -107,4 +107,21 @@ def test_stitcher_junction_map_uses_valid_j_overhangs() -> None:
 
 
 def test_supported_array_sizes() -> None:
-    assert constants.SUPPORTED_ARRAY_SIZES == (4, 6, 8, 10, 12)
+    assert constants.SUPPORTED_ARRAY_SIZES == (1, 2, 4, 6, 8, 10, 12)
+
+
+def test_terminal_uses_b3_directly_covers_endpoint_and_singletons() -> None:
+    # 1 and 2: too short to use library stitchers; terminal fragment goes direct to B3.
+    # 12: full-library natural endpoint at B3.
+    assert constants.TERMINAL_USES_B3_DIRECTLY == frozenset({1, 2, 12})
+    # No overlap with the stitcher map (each size belongs to exactly one regime).
+    assert not (
+        constants.TERMINAL_USES_B3_DIRECTLY
+        & constants.STITCHER_JUNCTION_BY_STOP_SIZE.keys()
+    )
+    # All supported sizes are accounted for by one regime or the other.
+    assert (
+        constants.TERMINAL_USES_B3_DIRECTLY
+        | constants.STITCHER_JUNCTION_BY_STOP_SIZE.keys()
+        == set(constants.SUPPORTED_ARRAY_SIZES)
+    )

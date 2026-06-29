@@ -1,5 +1,6 @@
 /* sgRNA Array Designer — minimal client-side enhancements:
    - Re-render the positional rows when the array size changes
+   - Drag-to-reorder rows via a grip handle (HTML5 native DnD)
    - Live crRNA validation hints (length, ACGT, PaqCI sites)
    - Copy-to-clipboard for fragment sequences
    No build step. Vanilla DOM only. */
@@ -14,6 +15,7 @@
   document.addEventListener("DOMContentLoaded", function () {
     wireArraySizeSelector();
     wireCrrnaInputs();
+    wireDragAndDrop();
     wireCopyButtons();
     // crRNA inputs may have been server-rendered with values; validate them on load.
     document.querySelectorAll("[data-validate-crrna]").forEach(validateCrrna);
@@ -47,20 +49,26 @@
           rowsEl.removeChild(existingRows[i]);
         }
       }
-      // Wire validation on any newly added inputs.
+      // Wire validation + DnD on any newly added rows.
       rowsEl
         .querySelectorAll('input[data-validate-crrna]:not([data-wired])')
-        .forEach(function (input) {
-          attachCrrnaListeners(input);
-        });
+        .forEach(attachCrrnaListeners);
+      rowsEl
+        .querySelectorAll('.row:not([data-dnd-wired])')
+        .forEach(attachRowDragEvents);
+      rowsEl
+        .querySelectorAll('.row-drag-handle:not([data-dnd-wired])')
+        .forEach(attachDragHandle);
+      renumberRows();
     });
   }
 
   function makeRowFromTemplate(template, pos) {
     const clone = template.cloneNode(true);
-    clone.classList.remove("row-error");
+    clone.classList.remove("row-error", "row-dragging", "row-drop-above", "row-drop-below");
+    clone.removeAttribute("data-dnd-wired");
     // Update labels and input names/IDs for the new position.
-    clone.querySelector(".row-pos").textContent = "pos " + pos;
+    clone.querySelector(".row-pos").textContent = "pos " + pos;
     clone.querySelectorAll("input").forEach(function (input) {
       const name = input.getAttribute("name") || "";
       const newName = name.replace(/_\d+$/, "_" + pos);
@@ -73,7 +81,111 @@
     clone.querySelectorAll(".row-error-msgs, .row-warning-msgs").forEach(function (el) {
       el.remove();
     });
+    // Clear DnD-wired marker on the handle so it gets re-wired.
+    const handle = clone.querySelector(".row-drag-handle");
+    if (handle) handle.removeAttribute("data-dnd-wired");
     return clone;
+  }
+
+  /* -------------------------------------------------------------------- */
+  /* Drag-to-reorder rows. The handle toggles draggable on its parent     */
+  /* row only while the handle is pressed; this keeps text-selection in   */
+  /* the inputs working normally.                                          */
+  /* -------------------------------------------------------------------- */
+  function wireDragAndDrop() {
+    document.querySelectorAll(".row").forEach(attachRowDragEvents);
+    document.querySelectorAll(".row-drag-handle").forEach(attachDragHandle);
+  }
+
+  function attachDragHandle(handle) {
+    if (handle.dataset.dndWired === "true") return;
+    handle.dataset.dndWired = "true";
+    const row = handle.closest(".row");
+    if (!row) return;
+
+    const enable = function () { row.setAttribute("draggable", "true"); };
+    const disable = function () { row.removeAttribute("draggable"); };
+
+    handle.addEventListener("mousedown", enable);
+    handle.addEventListener("mouseup", disable);
+    handle.addEventListener("mouseleave", disable);
+    // Keyboard parity: allow Space/Enter on a focused handle to enable
+    // drag, then standard DnD takes over once the user begins.
+    handle.addEventListener("keydown", function (e) {
+      if (e.key === " " || e.key === "Enter") {
+        e.preventDefault();
+        enable();
+      }
+    });
+  }
+
+  function attachRowDragEvents(row) {
+    if (row.dataset.dndWired === "true") return;
+    row.dataset.dndWired = "true";
+
+    row.addEventListener("dragstart", function (e) {
+      row.classList.add("row-dragging");
+      e.dataTransfer.effectAllowed = "move";
+      // Setting any data is required for Firefox to dispatch drag events.
+      e.dataTransfer.setData("text/plain", "row");
+    });
+
+    row.addEventListener("dragend", function () {
+      row.classList.remove("row-dragging");
+      row.removeAttribute("draggable");
+      document.querySelectorAll(".row-drop-above, .row-drop-below").forEach(function (el) {
+        el.classList.remove("row-drop-above", "row-drop-below");
+      });
+      renumberRows();
+    });
+
+    row.addEventListener("dragover", function (e) {
+      const dragging = document.querySelector(".row-dragging");
+      if (!dragging || dragging === row) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+
+      const rect = row.getBoundingClientRect();
+      const midY = rect.top + rect.height / 2;
+      const dropAbove = e.clientY < midY;
+
+      row.classList.toggle("row-drop-above", dropAbove);
+      row.classList.toggle("row-drop-below", !dropAbove);
+    });
+
+    row.addEventListener("dragleave", function () {
+      row.classList.remove("row-drop-above", "row-drop-below");
+    });
+
+    row.addEventListener("drop", function (e) {
+      e.preventDefault();
+      const dragging = document.querySelector(".row-dragging");
+      if (!dragging || dragging === row) return;
+
+      const rect = row.getBoundingClientRect();
+      const dropAbove = e.clientY < rect.top + rect.height / 2;
+      const parent = row.parentNode;
+      if (dropAbove) {
+        parent.insertBefore(dragging, row);
+      } else {
+        parent.insertBefore(dragging, row.nextSibling);
+      }
+      row.classList.remove("row-drop-above", "row-drop-below");
+    });
+  }
+
+  function renumberRows() {
+    const rows = document.querySelectorAll("#rows .row");
+    rows.forEach(function (row, idx) {
+      const pos = idx + 1;
+      const posLabel = row.querySelector(".row-pos");
+      if (posLabel) posLabel.innerHTML = "pos&nbsp;" + pos;
+      row.querySelectorAll("input").forEach(function (input) {
+        const name = input.getAttribute("name") || "";
+        const newName = name.replace(/_\d+$/, "_" + pos);
+        if (newName !== name) input.setAttribute("name", newName);
+      });
+    });
   }
 
   /* -------------------------------------------------------------------- */

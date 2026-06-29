@@ -18,6 +18,7 @@ from sgrna_array.constants import (
     STITCHER_JUNCTION_BY_STOP_SIZE,
     STITCHER_SPACER,
     SUPPORTED_ARRAY_SIZES,
+    TERMINAL_USES_B3_DIRECTLY,
 )
 from sgrna_array.enzymes import wrap_paqci_cassette
 from sgrna_array.ribozyme import build_full_hh, build_hdv
@@ -68,13 +69,12 @@ def junction_overhang(position: int, array_size: int) -> str:
 
     The 3' overhang of fragment N is the same physical 4-nt sequence as the 5' overhang
     of fragment N+1 (they form the ligation junction). For the terminal position of the
-    array, the 3' overhang is B3 (or for sub-12 sizes, the Jₙ overhang that the stitcher
-    bridges to B3).
+    array, the 3' overhang is B3 directly (sizes 1, 2, 12 — see
+    `TERMINAL_USES_B3_DIRECTLY`) or the Jₙ overhang that a stitcher oligo bridges to B3
+    (sizes 4, 6, 8, 10).
     """
     if position == array_size:
-        # Terminal fragment: its 3' overhang is the junction that the stitcher (or B3)
-        # connects to.
-        if array_size == 12:
+        if array_size in TERMINAL_USES_B3_DIRECTLY:
             return B3_OVERHANG
         return STITCHER_JUNCTION_BY_STOP_SIZE[array_size]
     # Non-terminal: 3' overhang is the junction to position + 1.
@@ -149,13 +149,18 @@ def build_fragment(
 
 
 def build_stitcher(array_size: int) -> Stitcher | None:
-    """Build the stitcher oligo that terminates a sub-12 array; None for size 12."""
-    if array_size == 12:
+    """Build the stitcher oligo for sizes that need one; None for sizes 1, 2, 12.
+
+    Sizes 1, 2, and 12 have their terminal fragment ligate to backbone B3 directly, so
+    no stitcher is required. Sizes 4, 6, 8, 10 use a library-style stitcher that bridges
+    the Jₙ junction to B3.
+    """
+    if array_size in TERMINAL_USES_B3_DIRECTLY:
         return None
     if array_size not in STITCHER_JUNCTION_BY_STOP_SIZE:
         raise ValueError(
             f"No stitcher defined for array_size={array_size}; "
-            f"supported sub-12 sizes: {sorted(STITCHER_JUNCTION_BY_STOP_SIZE)}"
+            f"sizes needing a stitcher: {sorted(STITCHER_JUNCTION_BY_STOP_SIZE)}"
         )
     left = STITCHER_JUNCTION_BY_STOP_SIZE[array_size]
     right = B3_OVERHANG
