@@ -103,6 +103,7 @@ def create_app() -> Flask:
             use_cs1=use_cs1,
             warnings=warnings,
             assembly_map_svg=_build_assembly_map_svg(array),
+            contiguous_insert=array.contiguous_insert(),
         )
 
     @app.route("/export/<design_id>/<fmt>")

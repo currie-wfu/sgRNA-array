@@ -45,7 +45,38 @@
   </section>
 
   <section class="card">
-    <h3>Fragments</h3>
+    <h3>Single contiguous insert <span class="muted-tag">alternative output</span></h3>
+    <p class="muted">
+      The whole {{ array.array_size }}-sgRNA array as one DNA piece, with PaqCI sites only at
+      the outer ends. After PaqCI digestion + T4 ligation it drops into the host vector with the
+      same final product as assembling the per-position fragments below — but you only order
+      <strong>one</strong> piece instead of {{ array.total_pieces() }}.
+    </p>
+    <dl class="summary">
+      <dt>Length</dt><dd>{{ contiguous_insert | length }} nt</dd>
+      <dt>Outer overhangs (after digestion)</dt><dd><code>ACGG</code> … <code>GAGC</code></dd>
+      <dt>Internal junctions preserved</dt>
+      <dd>
+        {% for frag in array.fragments[:-1] -%}
+          <code>{{ frag.right_overhang }}</code>{{ ", " if not loop.last else "" }}
+        {%- endfor %}
+        {% if array.array_size == 1 %}<span class="muted">(none — single core)</span>{% endif %}
+      </dd>
+    </dl>
+    <details>
+      <summary><code class="seq-summary">{{ contiguous_insert[:48] }}…</code> (click to expand)</summary>
+      <code class="seq-full">{{ contiguous_insert }}</code>
+      <button type="button" class="btn-copy" data-copy-target="contig-seq">Copy sequence</button>
+      <textarea id="contig-seq" class="seq-copy-source" readonly>{{ contiguous_insert }}</textarea>
+    </details>
+    <p class="muted">
+      Both this contiguous insert and the per-fragment pieces below are included in every
+      downloaded FASTA, CSV, and GenBank export — pick whichever fits your ordering workflow.
+    </p>
+  </section>
+
+  <section class="card">
+    <h3>Per-position fragments <span class="muted-tag">primary output</span></h3>
     <table class="fragment-table">
       <thead>
         <tr>

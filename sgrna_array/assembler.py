@@ -35,6 +35,7 @@ class Fragment:
     right_overhang: str  # 4-nt 3' overhang
     barcode: str | None  # 5' barcode (only on position-1 fragment)
     use_cs1: bool  # whether the scaffold has CS1 in Hairpin-1 loop
+    core: str  # RNA-coding region (+ barcode if pos 1); no PaqCI cassette or overhangs
     ordered_dna: str  # the full DNA sequence to order
 
     def __len__(self) -> int:
@@ -55,13 +56,40 @@ class Stitcher:
 class Array:
     """The full ordered set of pieces (Fragments + optional Stitcher) for one array design."""
 
-    array_size: int  # 4, 6, 8, 10, or 12
+    array_size: int  # one of SUPPORTED_ARRAY_SIZES
     fragments: list[Fragment] = field(default_factory=list)
     stitcher: Stitcher | None = None
 
     def total_pieces(self) -> int:
-        """Number of separate DNA pieces to order for this array."""
+        """Number of separate DNA pieces to order for the per-fragment Golden Gate workflow."""
         return len(self.fragments) + (1 if self.stitcher is not None else 0)
+
+    def contiguous_insert(self) -> str:
+        """The whole array as a single PaqCI-flanked DNA piece (alternative output).
+
+        Concatenates the per-fragment cores with their inter-position 4-nt junction
+        overhangs preserved between adjacent cores, then wraps the whole thing in one
+        outer PaqCI cassette with B5/B3 as the post-digestion sticky ends. Useful for
+        users who'd rather order one gBlock than the N library pieces.
+
+        After PaqCI/T4 cloning, the resulting insert in the host vector is identical
+        to what you'd get by assembling the per-fragment pieces.
+        """
+        if not self.fragments:
+            raise ValueError("Cannot build contiguous insert: array has no fragments")
+        body_parts: list[str] = []
+        for i, frag in enumerate(self.fragments):
+            body_parts.append(frag.core)
+            if i < len(self.fragments) - 1:
+                # The right overhang of fragment i is the same physical 4 nt as the
+                # left overhang of fragment i+1, so it appears once between the cores.
+                body_parts.append(frag.right_overhang)
+        body = "".join(body_parts)
+        return wrap_paqci_cassette(
+            core=body,
+            left_overhang=B5_OVERHANG,
+            right_overhang=B3_OVERHANG,
+        )
 
 
 def junction_overhang(position: int, array_size: int) -> str:
@@ -144,6 +172,7 @@ def build_fragment(
         right_overhang=right,
         barcode=barcode if position == 1 else None,
         use_cs1=use_cs1,
+        core=core,
         ordered_dna=ordered,
     )
 

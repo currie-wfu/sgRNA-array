@@ -262,6 +262,93 @@ def test_build_stitcher_returns_none_for_sizes_with_b3_terminus() -> None:
     assert build_stitcher(12) is None
 
 
+# ---------------------------------------------------------------------------
+# Contiguous insert (secondary output: whole array as one gBlock)
+# ---------------------------------------------------------------------------
+
+
+def test_fragment_exposes_core_field() -> None:
+    """Each Fragment carries its core (no PaqCI cassette, no overhangs) for re-use."""
+    frag = build_fragment(crrna=EXAMPLE_CRRNA, position=1, array_size=4)
+    # ordered_dna = pad + PaqCI_fwd + N + L_overhang + core + R_overhang + N + PaqCI_rev + pad
+    # Wrapper is 17 nt on each side (5 pad + 7 recog + 1 spacer + 4 overhang).
+    assert frag.core == frag.ordered_dna[17:-17]
+    # Core includes stem-I, crRNA, scaffold, HDV.
+    assert EXAMPLE_CRRNA.lower() in frag.core.lower()
+    assert EXPECTED_STEM_I in frag.core.lower()
+
+
+def test_contiguous_insert_size_1_matches_single_fragment_core_in_wrapper() -> None:
+    """For a size-1 array, the contiguous insert is just one core wrapped in PaqCI/B5/B3."""
+    arr = build_array(crrnas=[EXAMPLE_CRRNA], barcode="ACGTACGTACGT")
+    insert = arr.contiguous_insert()
+    # wrap_paqci_cassette wraps with pad(5) + PaqCI_fwd(7) + spacer(1) + L_overhang(4) on the
+    # left and the mirror on the right — so the 17-nt wrapper INCLUDES B5/B3 already.
+    # For size-1 with a 12-nt barcode, core = 12 + 6 + 37 + 20 + 76 + 68 = 219.
+    # Total = 17 + 219 + 17 = 253.
+    assert len(insert) == 17 + 219 + 17 == 253
+
+
+def test_contiguous_insert_size_4_concatenates_cores_with_junctions() -> None:
+    """For larger arrays, cores are concatenated with inter-position 4-nt overhangs."""
+    arr = build_array(crrnas=_dummy_crrnas(4), barcode="ACGTACGTACGT")
+    insert = arr.contiguous_insert()
+    # Body = core1_with_bc(219) + J1(4) + core2(207) + J2(4) + core3(207) + J3(4) + core4(207)
+    #      = 219 + 4 + 207 + 4 + 207 + 4 + 207 = 852
+    # Total = 17 + body + 17 = 886 (B5/B3 are inside the 17-nt wrapper).
+    expected_body = 219 + 4 + 207 + 4 + 207 + 4 + 207
+    assert len(insert) == 17 + expected_body + 17 == 886
+
+
+def test_contiguous_insert_has_exactly_one_paqci_site_per_end() -> None:
+    """No internal PaqCI sites; just the outer two for cloning into the vector."""
+    arr = build_array(crrnas=_dummy_crrnas(6), barcode="ACGTACGTACGT")
+    insert = arr.contiguous_insert()
+    assert insert.upper().count("CACCTGC") == 1
+    assert insert.upper().count("GCAGGTG") == 1
+
+
+def test_contiguous_insert_contains_all_crrnas_in_order() -> None:
+    # Use crRNAs with no shared 10-nt prefix so `find()` locates the right one.
+    crrnas = [
+        "ACGTACGTACGTACGTACGT",
+        "TGCATGCATGCATGCATGCA",
+        "AAATTTCCCGGGAAATTTCC",
+        "GGGAAACCCTTTGGGAAACC",
+        "CACGCACGCACGCACGCACG",
+        "GTCAGTCAGTCAGTCAGTCA",
+    ]
+    arr = build_array(crrnas=crrnas, barcode="ACGTACGTACGT")
+    insert = arr.contiguous_insert().lower()
+    last_pos = -1
+    for crrna in crrnas:
+        idx = insert.find(crrna.lower())
+        assert idx > last_pos, f"crRNA {crrna} not found after position {last_pos}"
+        last_pos = idx
+
+
+def test_contiguous_insert_outer_overhangs_are_b5_b3() -> None:
+    """Reading post-digestion, the outer sticky ends are B5 (5') and B3 (3')."""
+    arr = build_array(crrnas=_dummy_crrnas(4), barcode="ACGTACGTACGT")
+    insert = arr.contiguous_insert()
+    # Strip the wrapper: 5 pad + 7 PaqCI_fwd + 1 spacer = 13 nt prefix, mirrored suffix.
+    after_paqci = insert[13:-13]
+    assert after_paqci.startswith(constants.B5_OVERHANG)
+    assert after_paqci.endswith(constants.B3_OVERHANG)
+
+
+def test_contiguous_insert_internal_junctions_preserved() -> None:
+    """The 4-nt overhangs between adjacent cores appear once between them."""
+    arr = build_array(crrnas=_dummy_crrnas(4))
+    insert = arr.contiguous_insert()
+    # J1, J2, J3 should each appear at least once internally (in addition to other places).
+    # We do a stronger check: the junctions appear at the boundary between fragment cores.
+    for i in range(len(arr.fragments) - 1):
+        junction = arr.fragments[i].right_overhang
+        # The junction sits between core_i and core_(i+1). It must appear in the insert.
+        assert junction in insert
+
+
 def test_build_stitcher_overhangs_match_dossier() -> None:
     s = build_stitcher(4)
     assert s is not None

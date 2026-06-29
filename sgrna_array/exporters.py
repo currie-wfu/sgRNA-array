@@ -15,7 +15,15 @@ from sgrna_array.assembler import Array, Fragment, Stitcher
 
 
 def to_fasta(array: Array) -> str:
-    """Return a FASTA-formatted string with one record per fragment + optional stitcher."""
+    """Return a FASTA with one record per fragment, plus the contiguous insert.
+
+    Records appear in this order:
+        1. Each per-position fragment (pos1, pos2, …).
+        2. The stitcher oligo, if the array size needs one.
+        3. The contiguous insert (whole array as one PaqCI-flanked piece) — the
+           alternative single-gBlock output for users who don't want library-style
+           assembly.
+    """
     out = io.StringIO()
     for frag in array.fragments:
         header = _fasta_header_for_fragment(frag)
@@ -23,6 +31,8 @@ def to_fasta(array: Array) -> str:
     if array.stitcher is not None:
         header = _fasta_header_for_stitcher(array.stitcher)
         out.write(f">{header}\n{array.stitcher.ordered_dna}\n")
+    contiguous = array.contiguous_insert()
+    out.write(f">{_fasta_header_for_contiguous(array, contiguous)}\n{contiguous}\n")
     return out.getvalue()
 
 
@@ -60,6 +70,21 @@ def to_csv_order_sheet(array: Array) -> str:
                 f"Terminates array at position {array.stitcher.stop_size}",
             ]
         )
+    contiguous = array.contiguous_insert()
+    writer.writerow(
+        [
+            "contiguous_insert",
+            "contiguous_insert",
+            "",
+            "",
+            len(contiguous),
+            contiguous,
+            (
+                f"Whole {array.array_size}-sgRNA array as one gBlock; "
+                "outer overhangs ACGG / GAGC ligate directly into the host vector"
+            ),
+        ]
+    )
     return out.getvalue()
 
 
@@ -101,6 +126,20 @@ def to_genbank(array: Array) -> str:
         )
         records.append(record)
 
+    contiguous = array.contiguous_insert()
+    records.append(
+        SeqRecord(
+            Seq(contiguous.upper()),
+            id="contiguous_insert",
+            name="contig_insert"[:16],
+            description=(
+                f"Whole {array.array_size}-sgRNA array as one PaqCI-flanked gBlock; "
+                "alternative to ordering per-position fragments"
+            ),
+            annotations={"molecule_type": "DNA"},
+        )
+    )
+
     out = io.StringIO()
     from Bio import SeqIO
 
@@ -139,6 +178,17 @@ def _fasta_header_for_stitcher(stitcher: Stitcher) -> str:
         f"stitcher_stop{stitcher.stop_size} "
         f"L={stitcher.left_overhang} R={stitcher.right_overhang} "
         f"len={len(stitcher.ordered_dna)}"
+    )
+
+
+def _fasta_header_for_contiguous(array: Array, contiguous: str) -> str:
+    cs1 = "_cs1" if array.fragments and array.fragments[0].use_cs1 else ""
+    bc = ""
+    if array.fragments and array.fragments[0].barcode:
+        bc = f"_bc{array.fragments[0].barcode}"
+    return (
+        f"contiguous_insert_size{array.array_size}{cs1}{bc} "
+        f"L=ACGG R=GAGC len={len(contiguous)}"
     )
 
 

@@ -217,6 +217,73 @@ def test_export_unknown_format_returns_404(client):
     assert response.status_code == 404
 
 
+def test_results_show_contiguous_insert_section(client):
+    """Results page must include the secondary 'contiguous insert' output."""
+    form_data = {
+        "array_size": "4",
+        "gene_label_1": "Shh",
+        "crrna_1": "GGTGACGCGTGTGTACCTGG",
+        "gene_label_2": "Pax6",
+        "crrna_2": "ACGTACGTACGTACGTAAAA",
+        "gene_label_3": "Tbx5",
+        "crrna_3": "AACCAATTAACCAATTGCAT",
+        "gene_label_4": "Sox2",
+        "crrna_4": "GCATGCATGCATGCATAACA",
+    }
+    response = client.post("/design", data=form_data)
+    body = response.get_data(as_text=True)
+    assert "Single contiguous insert" in body
+    assert "alternative output" in body
+    assert "Per-position fragments" in body
+    assert "primary output" in body
+    # The contiguous insert sequence's copy textarea is wired up.
+    assert 'id="contig-seq"' in body
+
+
+def test_export_fasta_includes_contiguous_insert(client):
+    """The downloaded FASTA must contain a `>contiguous_insert_...` record at the end."""
+    form_data = {
+        "array_size": "4",
+        "gene_label_1": "Shh",
+        "crrna_1": "GGTGACGCGTGTGTACCTGG",
+        "gene_label_2": "Pax6",
+        "crrna_2": "ACGTACGTACGTACGTAAAA",
+        "gene_label_3": "Tbx5",
+        "crrna_3": "AACCAATTAACCAATTGCAT",
+        "gene_label_4": "Sox2",
+        "crrna_4": "GCATGCATGCATGCATAACA",
+    }
+    design_response = client.post("/design", data=form_data)
+    body = design_response.get_data(as_text=True)
+    import re
+    design_id = re.search(r"/export/([\w\-_]+)/fasta", body).group(1)
+
+    fasta = client.get(f"/export/{design_id}/fasta").get_data(as_text=True)
+    # Per-fragment records + stitcher + contiguous_insert.
+    assert fasta.count(">") == 4 + 1 + 1  # 4 fragments, 1 stitcher, 1 contiguous
+    assert ">contiguous_insert_size4" in fasta
+
+
+def test_export_csv_includes_contiguous_insert_row(client):
+    """The downloaded CSV must contain a `contiguous_insert` row."""
+    form_data = {
+        "array_size": "2",
+        "gene_label_1": "Shh",
+        "crrna_1": "GGTGACGCGTGTGTACCTGG",
+        "gene_label_2": "Pax6",
+        "crrna_2": "ACGTACGTACGTACGTAAAA",
+    }
+    design_response = client.post("/design", data=form_data)
+    body = design_response.get_data(as_text=True)
+    import re
+    design_id = re.search(r"/export/([\w\-_]+)/fasta", body).group(1)
+
+    csv = client.get(f"/export/{design_id}/csv").get_data(as_text=True)
+    assert "contiguous_insert" in csv
+    # Size 2 → 2 fragments + 0 stitcher + 1 contiguous = 3 data rows (4 lines incl. header).
+    assert csv.count("\n") >= 4
+
+
 def test_assembly_map_svg_renders(client):
     """The assembly map SVG should be embedded in the results page."""
     form_data = {
