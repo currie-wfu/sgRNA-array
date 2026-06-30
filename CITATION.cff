@@ -29,6 +29,11 @@ date-released: "2026-06-05"
 url: "https://github.com/currie-wfu/sgRNA-array"
 repository-code: "https://github.com/currie-wfu/sgRNA-array"
 license: MIT
+doi: 10.5281/zenodo.21053290
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.21053290
+    description: "Concept DOI — always resolves to the latest archived release"
 keywords:
   - CRISPR
   - sgRNA
@@ -41,7 +46,3 @@ keywords:
   - multiplex
   - sgRNA array
   - DeWeirdt scaffold
-
-# Zenodo will populate this DOI on first release. Replace the placeholder
-# with the actual DOI returned at zenodo.org/account/settings/github/...
-# doi: 10.5281/zenodo.XXXXXXX

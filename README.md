@@ -12,6 +12,10 @@ short_description: Multi-sgRNA arrays — ribozyme + PaqCI Golden Gate assembly
 
 # sgRNA Array Designer
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21053290.svg)](https://doi.org/10.5281/zenodo.21053290)
+[![Tests](https://github.com/currie-wfu/sgRNA-array/actions/workflows/test.yml/badge.svg)](https://github.com/currie-wfu/sgRNA-array/actions/workflows/test.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 Design ribozyme-flanked sgRNA DNA fragments for one-pot PaqCI Golden Gate assembly
 into multi-sgRNA arrays expressed from a Pol II intron.
 
@@ -60,17 +64,18 @@ flask --app webapp.app run --debug
 
 ## Citing
 
+Archived on Zenodo with DOI **[10.5281/zenodo.21053290](https://doi.org/10.5281/zenodo.21053290)**.
 A machine-readable citation lives in [`CITATION.cff`](CITATION.cff); GitHub renders it
-in the right sidebar of the repo. A Zenodo-minted DOI will be added once a versioned
-release is archived ([instructions](https://docs.github.com/en/repositories/archiving-a-github-repository/referencing-and-citing-content)).
+in the right sidebar of the repo.
 
 ```bibtex
 @software{currie_sgrna_array_designer,
-  author = {Currie, Joshua},
-  title  = {sgRNA Array Designer},
-  url    = {https://github.com/currie-wfu/sgRNA-array},
-  year   = {2026},
-  version = {0.1.0}
+  author  = {Currie, Joshua},
+  title   = {sgRNA Array Designer},
+  url     = {https://github.com/currie-wfu/sgRNA-array},
+  year    = {2026},
+  version = {0.1.0},
+  doi     = {10.5281/zenodo.21053290}
 }
 ```
 
