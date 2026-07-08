@@ -35,9 +35,33 @@ PAQCI_CUT_OFFSET_BOTTOM: int = 8
 #: ordered DNA fragment. NEB recommends ≥5 flanking nt for efficient PaqCI cutting.
 PAQCI_FLANKING_PAD_LEN: int = 5
 
-#: Single buffer nucleotide between PaqCI recognition and the 4-nt overhang.
-#: This is the spacer that PaqCI cuts after on the top strand.
-PAQCI_RECOGNITION_TO_OVERHANG_SPACER: str = "A"
+#: 4-nt filler between the PaqCI recognition site and the 4-nt overhang.
+#:
+#: PaqCI is CACCTGC(4/8) — top-strand cut 4 nt 3' of recognition, bottom-strand cut 8 nt.
+#: So the actual 4-nt overhang exposed after digestion sits at positions 5–8 downstream
+#: of the recognition site. Positions 1–4 (this filler) get cut away with the recognition
+#: site and are discarded.
+#:
+#: WITHOUT this filler (or with fewer than 4 nt of it), PaqCI cuts INSIDE the intended
+#: overhang and the exposed 4-nt sticky end is (nt 4 of intended overhang) + (first 3 nt
+#: of whatever follows). That's a bug — the exposed overhang no longer matches what the
+#: backbone expects, and downstream contents (barcode, stem-I) leak into it and change
+#: from design to design.
+#:
+#: Any 4 nt works — this sequence gets discarded during digestion. `AATA` chosen for
+#: 25 % GC, non-palindromic, and it doesn't reconstitute a PaqCI site when concatenated
+#: with `CACCTGC` or `GCAGGTG`.
+PAQCI_RECOGNITION_TO_OVERHANG_SPACER: str = "AATA"
+
+# Sanity check: this filler MUST match the top-strand cut offset, or PaqCI cuts in the
+# wrong place. If someone edits the constant above, the assertion below will fire at
+# module import time and prevent a bad build from ever running.
+assert len(PAQCI_RECOGNITION_TO_OVERHANG_SPACER) == PAQCI_CUT_OFFSET_TOP, (
+    f"PAQCI_RECOGNITION_TO_OVERHANG_SPACER must be {PAQCI_CUT_OFFSET_TOP} nt to place "
+    f"the intended overhang at the correct PaqCI cut site; got "
+    f"{len(PAQCI_RECOGNITION_TO_OVERHANG_SPACER)} nt "
+    f"({PAQCI_RECOGNITION_TO_OVERHANG_SPACER!r})"
+)
 
 
 # ---------------------------------------------------------------------------

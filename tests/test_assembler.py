@@ -114,13 +114,14 @@ def test_build_fragment_pos1_array4_no_barcode_no_cs1() -> None:
 
 def test_build_fragment_length_is_predictable() -> None:
     frag = build_fragment(crrna=EXAMPLE_CRRNA, position=1, array_size=12)
-    # Expected length: 5 pad + 7 PaqCI + 1 spacer + 4 overhang + 6 stem-I + 37 HH core
-    # + 20 crRNA + 76 scaffold + 68 HDV + 4 overhang + 1 spacer + 7 PaqCI + 5 pad
-    # = 241 nt
+    # Expected length: 5 pad + 7 PaqCI + 4 filler + 4 overhang + 6 stem-I + 37 HH core
+    # + 20 crRNA + 76 scaffold + 68 HDV + 4 overhang + 4 filler + 7 PaqCI + 5 pad
+    # = 247 nt (was 241 before the 4-nt filler fix; the 6-nt increase is the corrected
+    # PaqCI cut-offset space).
     expected_len = (
         constants.PAQCI_FLANKING_PAD_LEN
         + len(constants.PAQCI_RECOGNITION_FWD)
-        + len(constants.PAQCI_RECOGNITION_TO_OVERHANG_SPACER)
+        + len(constants.PAQCI_RECOGNITION_TO_OVERHANG_SPACER)  # NOW 4 nt (was 1)
         + 4  # left overhang
         + constants.HH_STEM_I_LEN
         + len(constants.HH_CATALYTIC_CORE)
@@ -128,11 +129,45 @@ def test_build_fragment_length_is_predictable() -> None:
         + len(constants.SGRNA_SCAFFOLD_DEWEIRDT)
         + len(constants.HDV_RIBOZYME)
         + 4  # right overhang
-        + len(constants.PAQCI_RECOGNITION_TO_OVERHANG_SPACER)
+        + len(constants.PAQCI_RECOGNITION_TO_OVERHANG_SPACER)  # NOW 4 nt (was 1)
         + len(constants.PAQCI_RECOGNITION_REV)
         + constants.PAQCI_FLANKING_PAD_LEN
     )
-    assert len(frag.ordered_dna) == expected_len == 241
+    assert len(frag.ordered_dna) == expected_len == 247
+
+
+def test_intended_overhang_sits_at_the_paqci_cut_position() -> None:
+    """Regression guard for the 4-nt-filler bug.
+
+    PaqCI cuts 4 nt 3' of CACCTGC on the top strand. The 4-nt sticky end exposed after
+    digestion is at positions 5–8 downstream of the recognition site. If this test
+    fails, the tool is generating fragments whose exposed overhang is NOT the intended
+    overhang — assemblies into the host vector will fail.
+    """
+    frag = build_fragment(crrna=EXAMPLE_CRRNA, position=1, array_size=12)
+    seq = frag.ordered_dna
+
+    # Find CACCTGC on the top strand.
+    idx_5 = seq.find(constants.PAQCI_RECOGNITION_FWD)
+    assert idx_5 >= 0, "5' PaqCI recognition site missing"
+    end_of_recog_5 = idx_5 + len(constants.PAQCI_RECOGNITION_FWD)
+    # Positions 5–8 after the recognition site (= 4-nt overhang exposed after PaqCI cut).
+    exposed_left = seq[end_of_recog_5 + 4 : end_of_recog_5 + 8]
+    assert exposed_left.upper() == frag.left_overhang.upper(), (
+        f"5' overhang exposed by PaqCI ({exposed_left!r}) does not match the intended "
+        f"left overhang ({frag.left_overhang!r}). "
+        f"The 4-nt filler between CACCTGC and the overhang is likely wrong."
+    )
+
+    # Same check for the 3' side (GCAGGTG). Positions 5–8 upstream of GCAGGTG on top
+    # correspond to bottom-strand positions 1–4 downstream of CACCTGC on bottom.
+    idx_3 = seq.find(constants.PAQCI_RECOGNITION_REV)
+    assert idx_3 >= 0, "3' PaqCI recognition site missing"
+    exposed_right = seq[idx_3 - 8 : idx_3 - 4]
+    assert exposed_right.upper() == frag.right_overhang.upper(), (
+        f"3' overhang exposed by PaqCI ({exposed_right!r}) does not match the intended "
+        f"right overhang ({frag.right_overhang!r})."
+    )
 
 
 def test_build_fragment_with_barcode_includes_it_only_at_position_1() -> None:
@@ -270,9 +305,9 @@ def test_build_stitcher_returns_none_for_sizes_with_b3_terminus() -> None:
 def test_fragment_exposes_core_field() -> None:
     """Each Fragment carries its core (no PaqCI cassette, no overhangs) for re-use."""
     frag = build_fragment(crrna=EXAMPLE_CRRNA, position=1, array_size=4)
-    # ordered_dna = pad + PaqCI_fwd + N + L_overhang + core + R_overhang + N + PaqCI_rev + pad
-    # Wrapper is 17 nt on each side (5 pad + 7 recog + 1 spacer + 4 overhang).
-    assert frag.core == frag.ordered_dna[17:-17]
+    # ordered_dna = pad + PaqCI_fwd + filler + L_overhang + core + R_overhang + filler + PaqCI_rev + pad
+    # Wrapper is 20 nt on each side (5 pad + 7 recog + 4 filler + 4 overhang).
+    assert frag.core == frag.ordered_dna[20:-20]
     # Core includes stem-I, crRNA, scaffold, HDV.
     assert EXAMPLE_CRRNA.lower() in frag.core.lower()
     assert EXPECTED_STEM_I in frag.core.lower()
@@ -282,11 +317,11 @@ def test_contiguous_insert_size_1_matches_single_fragment_core_in_wrapper() -> N
     """For a size-1 array, the contiguous insert is just one core wrapped in PaqCI/B5/B3."""
     arr = build_array(crrnas=[EXAMPLE_CRRNA], barcode="ACGTACGTACGT")
     insert = arr.contiguous_insert()
-    # wrap_paqci_cassette wraps with pad(5) + PaqCI_fwd(7) + spacer(1) + L_overhang(4) on the
-    # left and the mirror on the right — so the 17-nt wrapper INCLUDES B5/B3 already.
+    # wrap_paqci_cassette wraps with pad(5) + PaqCI_fwd(7) + filler(4) + L_overhang(4) on the
+    # left and the mirror on the right — so the 20-nt wrapper INCLUDES B5/B3 already.
     # For size-1 with a 12-nt barcode, core = 12 + 6 + 37 + 20 + 76 + 68 = 219.
-    # Total = 17 + 219 + 17 = 253.
-    assert len(insert) == 17 + 219 + 17 == 253
+    # Total = 20 + 219 + 20 = 259.
+    assert len(insert) == 20 + 219 + 20 == 259
 
 
 def test_contiguous_insert_size_4_concatenates_cores_with_junctions() -> None:
@@ -295,9 +330,9 @@ def test_contiguous_insert_size_4_concatenates_cores_with_junctions() -> None:
     insert = arr.contiguous_insert()
     # Body = core1_with_bc(219) + J1(4) + core2(207) + J2(4) + core3(207) + J3(4) + core4(207)
     #      = 219 + 4 + 207 + 4 + 207 + 4 + 207 = 852
-    # Total = 17 + body + 17 = 886 (B5/B3 are inside the 17-nt wrapper).
+    # Total = 20 + body + 20 = 892 (B5/B3 are inside the 20-nt wrapper).
     expected_body = 219 + 4 + 207 + 4 + 207 + 4 + 207
-    assert len(insert) == 17 + expected_body + 17 == 886
+    assert len(insert) == 20 + expected_body + 20 == 892
 
 
 def test_contiguous_insert_has_exactly_one_paqci_site_per_end() -> None:
@@ -331,8 +366,8 @@ def test_contiguous_insert_outer_overhangs_are_b5_b3() -> None:
     """Reading post-digestion, the outer sticky ends are B5 (5') and B3 (3')."""
     arr = build_array(crrnas=_dummy_crrnas(4), barcode="ACGTACGTACGT")
     insert = arr.contiguous_insert()
-    # Strip the wrapper: 5 pad + 7 PaqCI_fwd + 1 spacer = 13 nt prefix, mirrored suffix.
-    after_paqci = insert[13:-13]
+    # Strip the wrapper: 5 pad + 7 PaqCI_fwd + 4 filler = 16 nt prefix, mirrored suffix.
+    after_paqci = insert[16:-16]
     assert after_paqci.startswith(constants.B5_OVERHANG)
     assert after_paqci.endswith(constants.B3_OVERHANG)
 
