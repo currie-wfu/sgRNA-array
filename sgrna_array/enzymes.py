@@ -42,6 +42,56 @@ def scan_paqci_sites(seq: str) -> list[tuple[int, str]]:
     return hits
 
 
+def assert_no_extra_paqci_sites(
+    sequence: str,
+    *,
+    expected_fwd: int = 1,
+    expected_rev: int = 1,
+    context: str = "",
+) -> None:
+    """Raise ValueError if the sequence has an unexpected number of PaqCI sites.
+
+    A well-formed ordered DNA fragment (or contiguous insert) has exactly one
+    forward PaqCI site (`CACCTGC`) at the 5' cassette and one reverse site
+    (`GCAGGTG`) at the 3' cassette. Any additional site — introduced by a
+    crRNA + scaffold junction that happens to spell CACCTGC or GCAGGTG across
+    the boundary, or by a future code edit that breaks the wrapping — would
+    cause PaqCI to cut in an unintended place and the assembly would fail.
+
+    Called at the end of `build_fragment` and `Array.contiguous_insert` as a
+    defensive guard. If this fires in the wild it means the user's specific
+    crRNA is incompatible with its neighbors' sequences; the per-crRNA
+    validator (which only sees the crRNA in isolation) can't catch these.
+
+    Args:
+        sequence: The full ordered DNA to scan.
+        expected_fwd: Expected number of `CACCTGC` occurrences (default 1).
+        expected_rev: Expected number of `GCAGGTG` occurrences (default 1).
+        context: Human-readable label prepended to the error message
+            (e.g. "position-3 fragment for gene Pax6").
+
+    Raises:
+        ValueError: If either count differs from the expected value. Message
+            includes positions of every hit so the caller can pinpoint the
+            reconstituted site (typically at a crRNA/scaffold or overhang/core
+            boundary).
+    """
+    hits = scan_paqci_sites(sequence)
+    fwd_hits = [i for i, o in hits if o == "fwd"]
+    rev_hits = [i for i, o in hits if o == "rev"]
+    if len(fwd_hits) == expected_fwd and len(rev_hits) == expected_rev:
+        return
+    prefix = f"{context}: " if context else ""
+    raise ValueError(
+        f"{prefix}unexpected PaqCI site count. "
+        f"Expected {expected_fwd} CACCTGC (found {len(fwd_hits)} at {fwd_hits}) "
+        f"and {expected_rev} GCAGGTG (found {len(rev_hits)} at {rev_hits}). "
+        "This means a crRNA/scaffold/HDV boundary or barcode/stem-I boundary "
+        "reconstitutes a PaqCI recognition site — the fragment will not "
+        "assemble correctly. Pick a different crRNA or barcode."
+    )
+
+
 def wrap_paqci_cassette(
     core: str,
     left_overhang: str,

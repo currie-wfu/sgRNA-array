@@ -20,7 +20,7 @@ from sgrna_array.constants import (
     SUPPORTED_ARRAY_SIZES,
     TERMINAL_USES_B3_DIRECTLY,
 )
-from sgrna_array.enzymes import wrap_paqci_cassette
+from sgrna_array.enzymes import assert_no_extra_paqci_sites, wrap_paqci_cassette
 from sgrna_array.ribozyme import build_full_hh, build_hdv
 
 
@@ -85,11 +85,18 @@ class Array:
                 # left overhang of fragment i+1, so it appears once between the cores.
                 body_parts.append(frag.right_overhang)
         body = "".join(body_parts)
-        return wrap_paqci_cassette(
+        insert = wrap_paqci_cassette(
             core=body,
             left_overhang=B5_OVERHANG,
             right_overhang=B3_OVERHANG,
         )
+        # Defensive: same guard as per-fragment. A junction between adjacent cores
+        # (via a J-overhang) is a fresh boundary the per-fragment check didn't see.
+        assert_no_extra_paqci_sites(
+            insert,
+            context=f"contiguous insert for size-{self.array_size} array",
+        )
+        return insert
 
 
 def junction_overhang(position: int, array_size: int) -> str:
@@ -163,6 +170,14 @@ def build_fragment(
     right = junction_overhang(position, array_size)
 
     ordered = wrap_paqci_cassette(core=core, left_overhang=left, right_overhang=right)
+
+    # Defensive: catch any junction (crRNA↔scaffold, barcode↔stem-I, etc.) that
+    # accidentally reconstitutes a PaqCI site outside the two intentional cassettes.
+    label = gene_label or "unnamed"
+    assert_no_extra_paqci_sites(
+        ordered,
+        context=f"position-{position} fragment for {label!r}",
+    )
 
     return Fragment(
         position=position,

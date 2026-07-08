@@ -372,6 +372,79 @@ def test_contiguous_insert_outer_overhangs_are_b5_b3() -> None:
     assert after_paqci.endswith(constants.B3_OVERHANG)
 
 
+# ---------------------------------------------------------------------------
+# Reconstituted-PaqCI-site guard
+# ---------------------------------------------------------------------------
+
+
+def test_build_fragment_rejects_crrna_that_reconstitutes_paqci_at_scaffold_junction() -> None:
+    """A crRNA ending in `GCAGGT` + scaffold starting with `G` spells `GCAGGTG` at the
+    boundary — that's a reconstituted PaqCI reverse site, which would break assembly.
+
+    The per-crRNA validator doesn't catch this (the crRNA alone doesn't contain a
+    PaqCI site — only after concatenation with the scaffold does one appear). The
+    assembler's post-hoc check must catch it.
+    """
+    # scaffold starts with 'gtttg...', so a crRNA ending in 'GCAGGT' produces
+    # ...GCAGGT + g... = GCAGGTG. 20 nt total, no internal PaqCI site.
+    bad_crrna = "AAAAAAAAAAAAAAGCAGGT"
+    assert "CACCTGC" not in bad_crrna and "GCAGGTG" not in bad_crrna
+    with pytest.raises(ValueError, match="unexpected PaqCI site count"):
+        build_fragment(
+            crrna=bad_crrna,
+            position=1,
+            array_size=1,
+            gene_label="bad",
+        )
+
+
+def test_build_fragment_rejects_crrna_that_reconstitutes_forward_paqci() -> None:
+    """A crRNA ending in `CACCTG` followed by `C` at scaffold start would form
+    `CACCTGC`. Our scaffold starts with `g`, not `c`, so we need a crRNA that
+    contains part of CACCTGC at the boundary with the scaffold. Simulate by
+    putting `CACCTG` at the very end of the crRNA and confirming detection when
+    the assembled sequence is scanned."""
+    # Trickier to trigger — needs the immediate next character (start of scaffold)
+    # to be C, which our scaffold's start ('g') doesn't provide. So verify the
+    # symmetric case works: crRNA with CACCTGC internally is caught earlier by
+    # the validator, and the assembler check would also catch it downstream.
+    # Here we assert that a crRNA CONTAINING CACCTGC is caught by the assembler
+    # even if someone bypasses the up-front validator.
+    embedded = "AAAAAACACCTGCAAAAAAA"  # CACCTGC at positions 6-12; 20 nt total
+    assert "CACCTGC" in embedded
+    with pytest.raises(ValueError, match="unexpected PaqCI site count"):
+        build_fragment(
+            crrna=embedded,
+            position=1,
+            array_size=1,
+            gene_label="embedded_paqci",
+        )
+
+
+def test_valid_fragment_passes_reconstitution_guard() -> None:
+    """The Shh gRNA#3 example (which we know is a good crRNA) must not trip the guard."""
+    frag = build_fragment(
+        crrna=EXAMPLE_CRRNA,
+        position=1,
+        array_size=1,
+        gene_label="Shh",
+    )
+    # Exactly 1 forward + 1 reverse PaqCI site (the outer cassette).
+    upper = frag.ordered_dna.upper()
+    assert upper.count("CACCTGC") == 1
+    assert upper.count("GCAGGTG") == 1
+
+
+def test_contiguous_insert_size_1_passes_reconstitution_guard() -> None:
+    arr = build_array(
+        crrnas=[EXAMPLE_CRRNA],
+        barcode="ACGTACGTACGT",
+    )
+    insert = arr.contiguous_insert().upper()
+    assert insert.count("CACCTGC") == 1
+    assert insert.count("GCAGGTG") == 1
+
+
 def test_contiguous_insert_internal_junctions_preserved() -> None:
     """The 4-nt overhangs between adjacent cores appear once between them."""
     arr = build_array(crrnas=_dummy_crrnas(4))
