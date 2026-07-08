@@ -32,8 +32,19 @@ PAQCI_CUT_OFFSET_TOP: int = 4
 PAQCI_CUT_OFFSET_BOTTOM: int = 8
 
 #: Number of "padding" nucleotides outside the PaqCI recognition site on each end of an
-#: ordered DNA fragment. NEB recommends ≥5 flanking nt for efficient PaqCI cutting.
-PAQCI_FLANKING_PAD_LEN: int = 5
+#: ordered DNA fragment. Sets how much single-stranded DNA sits between the last
+#: PaqCI cut and the very end of the ordered piece.
+#:
+#: NEB's Golden Gate FAQ for PaqCI (2024-12-10 revision) explicitly recommends
+#: **6 flanking bases** at the 5' ends of Golden Gate amplicons: "For Golden Gate
+#: Assembly, how many base pairs should my amplicon inserts have flanking the PaqCI
+#: restriction site?" — answer: 6. This is above PaqCI's general cleavage-near-the-end
+#: profile (50–100% activity at ≥2 nt from a DNA terminus; 20–50% at 1 nt; 0% at 0).
+#: One-pot Golden Gate needs maximum enzyme activity to drive assembly to completion,
+#: hence the ≥6 nt guidance (vs. the ≥2 nt hard floor).
+#:
+#: Bumping from 5 → 6 nt costs +2 nt per fragment (+2 per contiguous insert).
+PAQCI_FLANKING_PAD_LEN: int = 6
 
 #: 4-nt filler between the PaqCI recognition site and the 4-nt overhang.
 #:

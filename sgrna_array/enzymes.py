@@ -19,9 +19,14 @@ from sgrna_array.constants import (
 )
 
 #: Default neutral padding sequence to flank the PaqCI cassette. Length matches
-#: PAQCI_FLANKING_PAD_LEN; chosen to be inert (no splice motifs, no enzyme sites).
-_DEFAULT_PAD: str = "ATACT"  # 5 nt
-assert len(_DEFAULT_PAD) == PAQCI_FLANKING_PAD_LEN
+#: PAQCI_FLANKING_PAD_LEN (6 nt per NEB's Golden Gate FAQ). Chosen to be inert:
+#: no splice donor/acceptor motifs, no BsaI/BsmBI/PaqCI recognition when
+#: concatenated with either PaqCI recognition site or with any of our overhangs.
+_DEFAULT_PAD: str = "AATACT"  # 6 nt
+assert len(_DEFAULT_PAD) == PAQCI_FLANKING_PAD_LEN, (
+    f"_DEFAULT_PAD length ({len(_DEFAULT_PAD)}) must match "
+    f"PAQCI_FLANKING_PAD_LEN ({PAQCI_FLANKING_PAD_LEN}). Update both in sync."
+)
 
 
 def scan_paqci_sites(seq: str) -> list[tuple[int, str]]:
