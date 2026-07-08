@@ -1,7 +1,9 @@
 # Production dependencies for Hugging Face Spaces / Docker deployment.
-# Versions are pinned to known-good ranges; tighten further if reproducibility
-# becomes a citation concern.
+# Pins are tight enough to avoid surprise breakage when HF's Docker cache
+# expires and picks up a newer minor release; loose enough that dependabot-
+# style patch updates still land automatically.
 
-biopython>=1.83,<2.0
-flask>=3.0,<4.0
-gunicorn>=21.2,<23.0
+biopython>=1.83,<1.86
+flask>=3.0.3,<3.2
+gunicorn>=22.0,<24.0
+werkzeug>=3.0,<3.2  # transitively required by Flask; pin to avoid a mismatch surprise
